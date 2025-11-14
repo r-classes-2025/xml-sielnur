@@ -10,6 +10,7 @@
 
 # Применяйте trimws() к результату парсинга, чтобы избавиться от лишних строк. 
 
+
 library(xml2)
 library(dplyr)
 library(purrr)
@@ -20,36 +21,63 @@ my_xmls <- list.files("letters/", full.names = TRUE)
 # Сначала напишите код для первого письма в датасете, чтобы потренироваться. 
 
 test_xml <- my_xmls[1]
-doc <- # ваш код здесь
-ns <- # ваш код здесь
-
+doc <- read_xml(test_xml)
+ns <- xml_ns(doc)
+ns
   
 # дата письма
-date <- # ваш код здесь
+date <- xml_attr(
+  xml_find_first(doc, ".//d1:correspAction[@type='sending']/d1:date", ns),
+  "when") |> 
+  trimws()
+
 
 
 # адресат письма
-corresp <- # ваш код здесь
+corresp <- xml_text(
+  xml_find_first(doc, ".//d1:correspAction[@type='receiving']/d1:persName", 
+  ns)) |> 
+  trimws()
 
 # том 
-vol <- # ваш код здесь
-
+vol <- xml_text(
+  xml_find_first(doc, ".//d1:biblScope[@unit='vol']", 
+  ns)) |> 
+  trimws()
 
 ## Когда все получится, оберните свое решение в функцию read_letter().
 
-read_letter <- function(xml_path) {
+read_letter <- function(xml_path) { 
+  doc <- read_xml(xml_path)
+  ns <- xml_ns(doc)
   
-  # ваш код здесь 
+  date <- xml_attr(
+    xml_find_first(doc, ".//d1:correspAction[@type='sending']/d1:date", ns),
+    "when" ) |> 
+    trimws()
+  
+  corresp <- xml_text(
+    xml_find_first(doc, ".//d1:correspAction[@type='receiving']/d1:persName",
+    ns)) |> 
+    trimws()
+  
+  vol <- xml_text(
+    xml_find_first(doc, ".//d1:biblScope[@unit='vol']", ns)
+  ) |> 
+    trimws()
 
   # записываем в тиббл
   res <- tibble(
-    # ваш код здесь
-   )
+    file = basename(xml_path),
+    vol = vol,
+    date = date,
+    corresp = corresp
+    )
 
   return(res)
 }
 
 
 # Прочтите все письма в один тиббл при помощи map_dfr(). 
-letters_tbl <- # ваш код здесь
+letters_tbl <- map_dfr(my_xmls, read_letter)
 
